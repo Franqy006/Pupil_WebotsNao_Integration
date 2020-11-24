@@ -16,7 +16,7 @@
   
   
 ## elementy do zrobienia:
-* szczegółowy opis, jak uruchomić z webots
+* szczegółowy opis, jak uruchomić z webots + zewn. paczki wymagane
 * markery (grafiki)
 * zbędne importy w skryptach
 * zmiana nazewnictwa na angielskie
