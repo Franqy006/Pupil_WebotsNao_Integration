@@ -1,0 +1,7 @@
+<launch>
+	<node pkg="nao" name="robotNameReader" type="robotNameReader.py" output="screen" /> 
+        <node pkg="nao" name="start_pupil" type="start_pupil.py" output="screen"/>
+        <node pkg="nao" type="pupil_zmq_ros_pub.py" name="Pupil_ZMQ_ROS" args="localhost 50020" output="screen"/>
+        <node pkg="nao" name="normalized_steering" type="normalized.py" output="screen"/>
+
+</launch>
