@@ -3,56 +3,60 @@
 import sys
 import rospy
 from webots_ros.srv import set_float
-from pupil_ros.msg import gaze_positions
-import webots_ros
+from nao.msg import gaze_positions
 from numpy import array, rot90
-from scipy.ndimage import zoom
 from sensor_msgs.msg import Image
 import cv2
 import numpy
-#From lib.coding import decode, extract_hamming_code
 from cv_bridge import CvBridge
 from numpy import mean, binary_repr, zeros
 import math
-read_name = rospy.get_param('robot_name')
-ROBOT_NODE_NAME = read_name.split('\"')[1]
-print ROBOT_NODE_NAME
 
+try:
+    ROBOT_NODE_NAME = rospy.get_param('robot_name')
+except:
+    print ('ERROR:robot_name rosparam read did not work')
 
 MARKER_SIZE = 5
 cv_bridge = CvBridge()
-publier = rospy.Publisher('/received_img', Image, queue_size=2)
 
-ruszR = rospy.ServiceProxy(ROBOT_NODE_NAME+'/RShoulderPitch/set_position', set_float)
-ruszL = rospy.ServiceProxy(ROBOT_NODE_NAME+'/LShoulderPitch/set_position', set_float)
+moveRightArm = rospy.ServiceProxy(ROBOT_NODE_NAME+'/RShoulderPitch/set_position', set_float)
+moveLeftArm = rospy.ServiceProxy(ROBOT_NODE_NAME+'/LShoulderPitch/set_position', set_float)
 
 prev = [0,0,0]
 gaze_x = 0.01
 gaze_y = 0.01
+last_marker = 0
 
+def rightArmUp():
+    moveRightArm(-1)
+def rightArmDown():
+    moveRightArm(1.5)
+def leftArmUp():
+    moveLeftArm(-1)
+def leftArmDown():
+    moveLeftArm(1.5)
 
-def rgora():
-    ruszR(-1)
-def rdol():
-    ruszR(1.5)
-def lgora():
-    ruszL(-1)
-def ldol():
-    ruszL(1.5)
+switcher = {
+    1: rightArmDown,
+    5: rightArmUp,
+    11: leftArmDown,
+    19: leftArmUp}
 
 def make_move(id):
+    global last_marker
     prev[0]=prev[1]
     prev[1]=prev[2]
     prev[2]=id
-    switcher = {
-        1: rdol,
-        5: rgora,
-        11: ldol,
-        19: lgora}
-    func = switcher.get(id, lambda : 'niepoprawny indeks')
-    print ('wolam: '+ str(id))
+    func = switcher.get(id, lambda : 'wrong index')
     if(prev[0]==prev[1]==prev[2]):
-        func()
+        if(last_marker != id):
+            print ("making move for marker_id = " + str(id))
+            func()
+            last_marker = id
+        else:
+            print ('marker did not change, no action requested')
+
 class HammingMarker(object):
     def __init__(self, id, contours=None):
         self.id = id
@@ -84,10 +88,6 @@ class HammingMarker(object):
     def id_as_binary(self):
         return binary_repr(self.id, width=12)
 
-
-
-
-
 #Matrix of coordinates that should be black for the marker to be valid
 BORDER_3_COORDINATES = [
     [0, 0], [0, 1], [0, 2], [0, 3], [0, 4],
@@ -99,7 +99,6 @@ BORDER_3_COORDINATES = [
 
 #Array of found markers
 FOUND_MARKERS = []
-
 
 
 #Checks if a marker is valid and rotates it upright
@@ -128,9 +127,6 @@ def validate_3(marker):
 
     return marker
 
-
-
-
 #Calculate the marker id
 def get_marker_id(marker):
     marker_id = 31-(marker[2][2]*(2**0) + marker[2][1]*(2**1) + marker[3][2]*(2**2) + marker[2][3]*(2**3) + marker[1][2]*(2**4))
@@ -139,13 +135,11 @@ def get_marker_id(marker):
 
 #Detect the marker id's and coordinates in an image, using a threshold
 def detect_markers(img, threshold, error):
+    global last_marker
     image = cv_bridge.imgmsg_to_cv2(img, 'bgr8')
     height,width, _ = image.shape
-#   im = numpy.array( img.data, dtype=numpy.uint8 )
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 10, 100)
-
-
 
     #Find contours in image
     contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)[-2:]
@@ -176,8 +170,7 @@ def detect_markers(img, threshold, error):
         persp_transf = cv2.getPerspectiveTransform(sorted_curve, canonical_marker_coords)
         warped_img = cv2.warpPerspective(image, persp_transf, (warped_size, warped_size))
         warped_gray = cv2.cvtColor(warped_img, cv2.COLOR_BGR2GRAY)
-        elo = cv_bridge.cv2_to_imgmsg(warped_gray)
-        publier.publish(elo)
+
         #Convert to binary matrix using a threshold. The binary matrix is a 5x5 matrix, where the first and last row and column must be 1 (= black)
         _, warped_bin = cv2.threshold(warped_gray, threshold, 255, cv2.THRESH_BINARY)
         marker = warped_bin.reshape(
@@ -199,26 +192,20 @@ def detect_markers(img, threshold, error):
 
             #Add found marker to list of markers as HammingMarker obj
             markers_list.append(HammingMarker(id=marker_id, contours=approx_curve))
-
         except ValueError:
             continue
+
     for mark in markers_list:
-#        if(abs(((25 +mark.center[0])/(1240))-gaze_x) < error and abs(((0.11*height + mark.center[1])/(0.92*height))-gaze_y) < error):
         if(abs(((float(mark.center[0]+20))/(width))-gaze_x) < error and abs(1-( float(mark.center[1])/(height))-gaze_y) < error):
+            print('posX ='+ str(mark.center[0]))
+            print('posy ='+ str(mark.center[1]))
             make_move(mark.id)
-            print('X ='+ str(mark.center[0]))
-            print('y ='+ str(mark.center[1]))
-#        print(mark.id)
-#        print('x= '+str(mark.center[0])+'/'+ str(width) +'=' +str(float((float(mark.center[0]))/(width))))
-#        print gaze_x
-#        print('y= '+str(mark.center[1])+'/'+ str(height) +'=' +str(1 - float((float(mark.center[1]))/(height))))
-#        print gaze_y
+            print('-----')
 
     return markers_list
 
 def callback(data):
     detect_markers(data,50,0.09)
-#    print(repr(detect_markers(data,50)))
 
 def gaze_callback(data):
     global gaze_x
@@ -227,15 +214,11 @@ def gaze_callback(data):
     gaze_y = data.gazes[0].norm_pos.y
 
 def listener():
-    rospy.init_node('wykrywacz_markerow')
+    rospy.init_node('marker_controler')
     rospy.Subscriber("pupil_capture/world",Image,callback)
     rospy.Subscriber("pupil_capture/gaze",gaze_positions,gaze_callback)
     rospy.spin()
 
 if __name__=='__main__':
-        print "markery"
-        global czas1
-        czas1 = 0
-        global czas2
-        czas2= 0
+        print "marker control start"
         listener()

@@ -50,7 +50,6 @@ find_package(catkin REQUIRED COMPONENTS
  add_message_files(
    FILES
    gaze.msg
-   pupil_data.msg
    gaze_positions.msg
  )
 
