@@ -18,7 +18,7 @@
 ## elementy do zrobienia:
 * szczegółowy opis, jak uruchomić z webots + zewn. paczki wymagane
 * markery (grafiki)
-* zbędne importy w skryptach
-* zmiana nazewnictwa na angielskie
-* wykorzystywanie wiadomości z tego repozytorium, nie pupil_ros_plugin
-* na razie zostawiłem zakomentowane zbędne części pupil_zmq_ros_pub.py
+* <done>zbędne importy w skryptach
+* <done>zmiana nazewnictwa na angielskie
+* <done>wykorzystywanie wiadomości z tego repozytorium, nie pupil_ros_plugin
+* <done>na razie zostawiłem zakomentowane zbędne części pupil_zmq_ros_pub.py
