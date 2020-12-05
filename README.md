@@ -11,14 +11,14 @@
   * markers.launch - uruchamia powyższe skrypty ze sterowaniem markerami
   * normalized.launch - uruchamia powyższe skrypty ze sterowaniem manualnym
 ### msg:
-  * Typy wiadomości skopiowane z zewnętrznej biblioteki, niestety nie udało mi się ich zaimportować, więc w skryptach wciąż używane zewnętrzne
+  * Typy wiadomości skopiowane z zewnętrznej biblioteki
   
   
   
 ## elementy do zrobienia:
 * szczegółowy opis, jak uruchomić z webots + zewn. paczki wymagane
 * markery (grafiki)
-* <done>zbędne importy w skryptach
-* <done>zmiana nazewnictwa na angielskie
-* <done>wykorzystywanie wiadomości z tego repozytorium, nie pupil_ros_plugin
-* <done>na razie zostawiłem zakomentowane zbędne części pupil_zmq_ros_pub.py
+* (done)zbędne importy w skryptach
+* (done)zmiana nazewnictwa na angielskie
+* (done)wykorzystywanie wiadomości z tego repozytorium, nie pupil_ros_plugin
+* (done)na razie zostawiłem zakomentowane zbędne części pupil_zmq_ros_pub.py
